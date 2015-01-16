@@ -204,6 +204,11 @@ build_dep() {
 		mkdir -p "${INSTALL_ROOT}" \
 			|| die "Cannot create depcache install root at: ${INSTALL_ROOT}'"
 	fi
+echo "3 - Build_Dep "
+echo "SAVE_DEP_CACHE = " ${SAVE_DEP_CACHE}
+echo "OPENVPN_ROOT = " ${OPENVPN_ROOT}
+echo "BUILDROOT = " ${BUILDROOT}
+echo "INSTALL_ROOT = " ${INSTALL_ROOT}
 
 	if [ -n "${USE_DEP_CACHE}" ]; then
 		depcache_extract openssl
@@ -230,6 +235,19 @@ build_dep() {
 
 		[ -n "${SAVE_DEP_CACHE}" ] && depcache_save openssl
 	fi
+echo "3a - Build_Dep "
+echo "USE_DEP_CACHE = " ${USE_DEP_CACHE}
+echo "BUILDROOT = " ${BUILDROOT}
+echo "TARGET_ROOT = " ${TARGET_ROOT}
+echo "DO_STATIC = " ${DO_STATIC}
+echo "VIRTUAL_CHOST = " ${VIRTUAL_CHOST}
+echo "CFLAGS = " ${CFLAGS}
+echo "LDFLAGS = " ${LDFLAGS}
+echo "SCRIPTROOT = " ${SCRIPTROOT}
+echo "OPENSSL_SKIP_DEPEND = " ${OPENSSL_SKIP_DEPEND}
+echo "INSTALL_ROOT = " ${INSTALL_ROOT}
+
+
 
 
 	if [ -n "${USE_DEP_CACHE}" ]; then
@@ -247,6 +265,20 @@ build_dep() {
 
 		[ -n "${SAVE_DEP_CACHE}" ] && depcache_save lzo
 	fi
+echo "3b - Build_Dep "
+echo "USE_DEP_CACHE = " ${USE_DEP_CACHE}
+echo "BUILDROOT = " ${BUILDROOT}
+echo "CONFIGOPTS = " ${CONFIGOPTS}
+echo "EXTRA_LZO_CONFIG = " ${EXTRA_LZO_CONFIG}
+echo "DO_STATIC = " ${DO_STATIC}
+
+echo "MAKE = " ${MAKE}
+echo "MAKEOPTS = " ${MAKEOPTS}
+echo "MAKE_AUTOCONF_INSTALL_TARGET = " ${MAKE_AUTOCONF_INSTALL_TARGET}
+echo "INSTALL_ROOT = " ${INSTALL_ROOT}
+
+
+
 
 	if [ -z "${DO_STATIC}" ]; then
 	  if [ -n "${USE_DEP_CACHE}" ]; then
@@ -266,11 +298,33 @@ build_dep() {
 		[ -n "${SAVE_DEP_CACHE}" ] && depcache_save pkcs11-helper
 	  fi
 	fi
+echo "3c - Build_Dep "
+echo "DO_STATIC = " ${DO_STATIC}
+echo "USE_DEP_CACHE = " ${USE_DEP_CACHE}
+echo "BUILDROOT = " ${BUILDROOT}
+echo "CONFIGOPTS = " ${CONFIGOPTS}
+echo "EXTRA_PKCS11_HELPER_CONFIG = " ${EXTRA_PKCS11_HELPER_CONFIG}
+echo "OPENSSL_CRYPTO_CFLAGS = " ${OPENSSL_CRYPTO_CFLAGS}
+echo "OPENSSL_CRYPTO_LIBS = " ${OPENSSL_CRYPTO_LIBS}
+
+echo "MAKE = " ${MAKE}
+echo "MAKEOPTS = " ${MAKEOPTS}
+echo "MAKE_AUTOCONF_INSTALL_TARGET = " ${MAKE_AUTOCONF_INSTALL_TARGET}
+echo "INSTALL_ROOT = " ${INSTALL_ROOT}
+echo "SAVE_DEP_CACHE = " ${SAVE_DEP_CACHE}
+
+
+
 
 	echo "tap-windows"
 	cp "${BUILDROOT}"/tap-windows-*/include/* "${OPENVPN_ROOT}/include" || die "tap-windows copy"
 
 	fixup_la
+echo "3d - Build_Dep "
+echo "BUILDROOT = " ${BUILDROOT}
+echo "OPENVPN_ROOT = " ${OPENVPN_ROOT}
+echo "SCRIPTROOT = " ${SCRIPTROOT}
+
 
 	cd "${SCRIPTROOT}"
 	restore_la
@@ -282,17 +336,40 @@ build_openvpn() {
 
 	echo "Build openvpn"
 	cd "${BUILDROOT}/openvpn-${OPENVPN_VERSION}" || die "cd openvpn"
+
+echo "2 - Build_OpenVPN "
+echo "BUILDROOT = " ${BUILDROOT}
+echo "OPENVPN_VERSION = " ${OPENVPN_VERSION}
+
+CFLAGS = -static -static-libgcc -ldl
+
 	./configure ${CONFIGOPTS} ${EXTRA_OPENVPN_CONFIG} \
+        $(empty_ifelse "${DO_STATIC}" --enable-shared --disable-shared) \
 		$(empty_ifelse "${DO_STATIC}" --enable-pkcs11 --disable-plugins) \
+        ${CFLAGS} ${LDFLAGS} \
 		--enable-lzo \
 		--with-special-build="${SPECIAL_BUILD}" \
 		|| die "Configure openvpn"
-	${MAKE} ${MAKEOPTS} ${MAKE_AUTOCONF_INSTALL_TARGET} DESTDIR="${OPENVPN_ROOT}" || die "make openvpn"
+    ${MAKE} ${MAKEOPTS} ${MAKE_AUTOCONF_INSTALL_TARGET} DESTDIR="${OPENVPN_ROOT}" || die "make openvpn"
+
+echo "2.a - Build_OpenVPN "
+echo "CONFIGOPTS = " ${CONFIGOPTS}
+echo "EXTRA_OPENVPN_CONFIG = "${EXTRA_OPENVPN_CONFIG}
+echo "DO_STATIC = "${DO_STATIC}
+echo "SPECIAL_BUILD = "${SPECIAL_BUILD}
+
+echo "MAKE = " ${MAKE}
+echo "MAKEOPTS = " ${MAKEOPTS}
+echo "MAKE_AUTOCONF_INSTALL_TARGET = "${MAKE_AUTOCONF_INSTALL_TARGET}
+echo "DESTDIR=${OPENVPN_ROOT}""${OPENVPN_ROOT}"
+
 
 	fixup_la
 
 	cd "${SCRIPTROOT}"
 	restore_la
+echo "SCRIPTROOT = " ${SCRIPTROOT}
+
 }
 
 build_openvpn_gui() {
@@ -303,7 +380,7 @@ build_openvpn_gui() {
 	cd "${BUILDROOT}/openvpn-gui"* || die "cd openvpn gui"
 	./configure ${CONFIGOPTS} ${EXTRA_OPENVPN_GUI_CONFIG} \
 		|| die "Configure openvpn-gui"
-	${MAKE} ${MAKEOPTS} ${MAKE_AUTOCONF_INSTALL_TARGET} DESTDIR="${OPENVPN_ROOT}" || die "make openvpn-gui"
+    ${MAKE} ${MAKEOPTS} ${MAKE_AUTOCONF_INSTALL_TARGET} DESTDIR="${OPENVPN_ROOT}" || die "make openvpn-gui"
 
 	fixup_la
 
@@ -363,23 +440,49 @@ solaris_common() {
 }
 
 main() {
-	export CFLAGS="${TARGET_CFLAGS} ${EXTRA_TARGET_CFLAGS}"
+    export CFLAGS="${TARGET_CFLAGS} ${EXTRA_TARGET_CFLAGS}"
 	export LDFLAGS="${TARGET_LDFLAGS} ${EXTRA_TARGET_LDFLAGS}"
-	download
-	create_layout
-	extract
-	build_dep
-	if [ -z "${DO_ONLY_DEPS}" ]; then
-		build_openvpn
-		[ -n "${BUILD_FOR_WINDOWS}" ] && build_openvpn_gui
-		copy_docs
-		copy_sources
-		clean_empty_dirs
-		pack
-	fi
+    download
+    create_layout
+    extract
+    build_dep
+    if [ -z "${DO_ONLY_DEPS}" ]; then
+
+echo "- MAIN -"
+echo "CFLAGS = " ${CFLAGS}
+echo "LDFLAGS = " ${LDFLAGS}
+echo "TARGET_CFLAGS = " ${TARGET_CFLAGS}
+echo "EXTRA_TARGET_CFLAGS = " ${EXTRA_TARGET_CFLAGS}
+echo "DO_ONLY_DEPS = " ${DO_ONLY_DEPS}
+echo "BUILD_FOR_WINDOWS = " ${BUILD_FOR_WINDOWS}
+
+        build_openvpn
+        [ -n "${BUILD_FOR_WINDOWS}" ] && build_openvpn_gui
+        copy_docs
+        copy_sources
+        clean_empty_dirs
+        pack
+    fi
 }
 
 SCRIPTROOT="$(get_full_path "$(dirname "$0")")"
+
+#export PATH=$PATH:~/raspberrypi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin
+#IMAGEROOT=`pwd`/image-arm
+#CHOST=arm-linux-gnueabi
+#CBUILD=x86_64-pc-linux-gnu
+#CHOST=i686-pc-linux-gnu
+#CTARGET=i686-pc-linux-gnu
+##CHOST=i686-w64-mingw32
+##CBUILD=x86_64-pc-linux-gnu
+###CHOST=arm-linux-gnueabi
+###CBUILD=x86_64-pc-linux-gnu
+########CHOST=arm-linux-gnueabihf
+export DO_REALLY_STATIC=1
+export DO_STATIC=1
+export CHOST=arm-linux-gnueabihf
+export CBUILD=x86_64-pc-linux-gnu
+
 
 #CHOST
 VIRTUAL_CHOST="${CHOST}"
@@ -391,6 +494,24 @@ IMAGEROOT="${IMAGEROOT:-${SCRIPTROOT}/image}"
 BUILDROOT="${BUILDROOT:-${SCRIPTROOT}/tmp}"
 SOURCESROOT="${SOURCESROOT:-${SCRIPTROOT}/sources}"
 PATCHDIR="${SCRIPTROOT}/patches"
+
+echo "1 - Variable Initialization "
+echo "SCRIPTROOT = " ${SCRIPTROOT}
+echo "IMAGEROOT = " ${IMAGEROOT}
+echo "CHOST = " ${CHOST}
+echo "CBUILD = " ${CBUILD}
+echo "VIRTUAL_CHOST = " ${VIRTUAL_CHOST}
+echo "DO_STATIC = " ${DO_STATIC}
+echo "CTARGET = " ${CTARGET}
+echo "TARGET_CFLAGS = " ${TARGET_CFLAGS}
+echo "TARGET_LDFLAGS = " ${TARGET_LDFLAGS}
+echo "IMAGEROOT = " ${IMAGEROOT}
+echo "BUILDROOT = " ${BUILDROOT}
+echo "SOURCESROOT = " ${SOURCESROOT}
+echo "PATCHDIR = " ${PATCHDIR}
+
+
+
 
 . "${SCRIPTROOT}/build.vars" || die "Cannot source build.vars"
 
